@@ -32,6 +32,7 @@ fn handle_command_output(output: Output) {
 #[cfg(not(feature = "apple"))]
 fn main() {
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
+    let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
 
     // TODO: fix build for wasm32 on MacOS
     //   errors with `error: linking with `rust-lld` failed: exit status: 1`
@@ -63,12 +64,48 @@ fn main() {
 
     fs::create_dir_all(&bls_dash_build_path).expect("can't create build directory");
 
-    let cmake_output = create_cross_cmake_command()
+
+    let cmake_command_binding = create_cross_cmake_command();
+    let mut cmake_command = cmake_command_binding;
+
+    cmake_command
         .current_dir(&bls_dash_build_path)
         .arg("-DBUILD_BLS_PYTHON_BINDINGS=0")
         .arg("-DBUILD_BLS_TESTS=0")
         .arg("-DBUILD_BLS_BENCHMARKS=0")
-        .arg("-DBUILD_BLS_JS_BINDINGS=0")
+        .arg("-DBUILD_BLS_JS_BINDINGS=0");
+
+    // configure CMake for Android
+    if target_os.eq("android") {
+        let cmake_toolchain_path = env::var("CMAKE_TOOLCHAIN_FILE")
+            .or_else(|_| env::var("CARGO_NDK_CMAKE_TOOLCHAIN_PATH"))
+            .expect("Neither CMAKE_TOOLCHAIN_FILE nor CARGO_NDK_CMAKE_TOOLCHAIN_PATH environment variables are set");
+
+        let ndk_target = match env::var("CARGO_NDK_TARGET_ARCH") {
+            Ok(value) => value, // If set, use the value directly.
+            Err(_) => {
+                match target_arch.as_str() {
+                    "aarch64" => "arm64-v8a".to_string(),
+                    "arm" => "armeabi-v7a".to_string(),
+                    "x86" => "x86".to_string(),
+                    "x86_64" => "x86_64".to_string(),
+                    _ => panic!("Unsupported target architecture for Android: {}", target_arch),
+                }
+            }
+        };
+
+        // Default to android-24 if ANDROID_PLATFORM is not specified
+        let android_abi = env::var("ANDROID_PLATFORM")
+            .or_else(|_| env::var("CARGO_NDK_ANDROID_PLATFORM"))
+            .unwrap_or_else(|_| "android-24".to_string());
+
+        cmake_command
+            .arg(format!("-DANDROID_PLATFORM={}", android_abi))
+            .arg(format!("-DANDROID_ABI={}", ndk_target))
+            .arg(format!("-DCMAKE_TOOLCHAIN_FILE={}", cmake_toolchain_path));
+    }
+
+    let cmake_output = cmake_command
         .arg("..")
         .output()
         .expect("can't run cmake");
@@ -127,7 +164,8 @@ fn main() {
     cc.files(cpp_files)
         .includes(&include_paths)
         .cpp(true)
-        .flag_if_supported("-std=c++14");
+        .flag_if_supported("-std=c++14")
+        .target(&env::var("TARGET").unwrap());
 
     let target_arch = env::var("CARGO_CFG_TARGET_ARCH").unwrap();
 

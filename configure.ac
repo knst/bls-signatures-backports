@@ -171,6 +171,22 @@ AC_ARG_WITH([backend],
   [want_backend=auto]
 )
 
+case $host in
+  *darwin*)
+    AC_PATH_PROG([BREW],brew,)
+    if test x$BREW != x; then
+      # These Homebrew packages may be keg-only, meaning that they won't be found
+      # in expected paths because they may conflict with system files. Ask
+      # Homebrew where each one is located, then adjust paths accordingly.
+      gmp_prefix=`$BREW --prefix gmp 2>/dev/null`
+      if test x$gmp_prefix != x; then
+        GMP_CPPFLAGS="-I$gmp_prefix/include"
+        GMP_LDFLAGS="-L$gmp_prefix/lib"
+      fi
+    fi
+  ;;
+esac
+
 if test x"$want_backend" = x"auto"; then
   if test x"$use_optimizations" = x"no"; then
     want_backend=easy
@@ -435,16 +451,7 @@ case $host in
   *darwin*)
      AC_DEFINE([OPSYS], [MACOSX], [Detected operation system.])
      AC_PATH_PROG([BREW],brew,)
-     if test x$BREW != x; then
-       # These Homebrew packages may be keg-only, meaning that they won't be found
-       # in expected paths because they may conflict with system files. Ask
-       # Homebrew where each one is located, then adjust paths accordingly.
-       gmp_prefix=`$BREW --prefix gmp 2>/dev/null`
-       if test x$gmp_prefix != x; then
-         GMP_CPPFLAGS="-I$gmp_prefix/include"
-         GMP_LDFLAGS="-L$gmp_prefix/lib"
-       fi
-     else
+     if test x$BREW = x; then
        AC_PATH_PROG([PORT],port,)
        # If homebrew isn't installed and macports is, add the macports default paths
        # as a last resort.

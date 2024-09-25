@@ -35,14 +35,9 @@ else
   CXXFLAGS_overridden=no
 fi
 
+AC_PROG_CC
+
 AC_PROG_CXX
-
-AM_PROG_CC_C_O
-
-AC_PROG_CC_C99
-if test x"$ac_cv_prog_cc_c99" = x"no"; then
-  AC_MSG_ERROR([c99 compiler support required])
-fi
 
 dnl By default, libtool for mingw refuses to link static libs into a dll for
 dnl fear of mixing pic/non-pic objects, and import/export complications. Since

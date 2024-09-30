@@ -148,15 +148,56 @@ AC_DEFINE([GMP],     [2], [Backend based on GNU Multiple Precision library.])
 AC_DEFINE([GMP_SEC], [3], [Backend based on GNU Multiple Precision library, but using constant-time code.])
 
 AC_DEFUN([GMP_CHECK],[
-if test x"$has_gmp" != x"yes"; then
+  AC_REQUIRE([AC_PROG_CC])
+
   CPPFLAGS_TEMP="$CPPFLAGS"
   CPPFLAGS="$GMP_CPPFLAGS $CPPFLAGS"
   LIBS_TEMP="$LIBS"
   LIBS="$GMP_LDFLAGS $LIBS"
-  AC_CHECK_HEADER(gmp.h,[AC_CHECK_LIB(gmp, __gmpz_init,[has_gmp=yes; GMP_LIBS="-lgmp";])])
+
+  AC_CHECK_HEADER(
+    gmp.h,
+    [AC_CHECK_LIB(gmp, __gmpz_init, [], [gmp_fail_reason="libgmp not found or unusable"; has_gmp=no;])],
+    [gmp_fail_reason="gmp header not found"; has_gmp=no;]
+  )
+
+  if test x"$has_gmp" != x"no"; then
+    # Proper support for macOS aarch64 was introduced in 6.3.0, but LTS distros
+    # like Ubuntu 20.04 (focal) use 6.2.0, so, the minimum supported version is
+    # determined by platform and architecture.
+    case $host in
+      *darwin*)
+        case $host_cpu in
+          aarch*)
+            gmp_major_version=6
+            gmp_minor_version=3
+            ;;
+        esac
+        ;;
+      *)
+        gmp_major_version=6
+        gmp_minor_version=2
+        ;;
+    esac
+    AC_MSG_CHECKING([gmp version >= $gmp_major_version.$gmp_minor_version])
+    AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(
+        [[@%:@include <gmp.h>]],
+        [[
+          @%:@if __GNU_MP_VERSION < $gmp_major_version || __GNU_MP_VERSION_MINOR < $gmp_minor_version
+            @%:@error Unsupported GMP version
+          @%:@endif]])],
+      [AC_MSG_RESULT([yes]); GMP_LIBS="-lgmp"; has_gmp=yes;],
+      [AC_MSG_RESULT([no]); gmp_fail_reason="unsupported gmp version"; has_gmp=no;]
+    )
+  fi
+
+  if test x"$want_backend" = x"gmp" && test x"$has_gmp" = x"no"; then
+    AC_MSG_ERROR([$gmp_fail_reason])
+  fi
+
   CPPFLAGS="$CPPFLAGS_TEMP"
   LIBS="$LIBS_TEMP"
-fi
 ])
 
 AC_ARG_WITH([backend],
@@ -210,10 +251,8 @@ if test x"$want_backend" = x"auto"; then
 else
   case $want_backend in
   gmp)
+    dnl GMP_CHECK will report the reason if and why the backend cannot be used.
     GMP_CHECK
-    if test x"$has_gmp" != x"yes"; then
-      AC_MSG_ERROR([gmp backend explicitly requested but libgmp not available])
-    fi
     ;;
   easy)
     ;;

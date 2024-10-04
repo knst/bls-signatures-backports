@@ -418,10 +418,10 @@ if [[[ "$host_cpu" == x86_64 && "$use_optimizations" == "yes" ]]]; then
   AC_DEFINE([ARCH], [X64], [Architecture.])
   AC_DEFINE([WSIZE], [64], [Size of word in this architecture.])
 elif [[[ "$host_cpu" == aarch* && "$use_optimizations" == "yes" ]]]; then
-  dnl Relic doesn't support aarch64 yet, set CPU_ARCH to none.
   dnl Support for 64-bit ARM processors
+  dnl Relic doesn't support aarch64 yet, set CPU_ARCH to none and ARCH to RELIC_NONE.
   CPU_ARCH="none"
-  AC_DEFINE([ARCH], [ARM], [Architecture.])
+  AC_DEFINE([ARCH], [RELIC_NONE], [Architecture.])
   AC_DEFINE([WSIZE], [64], [Size of word in this architecture.])
 elif [[[ "$host_cpu" == i?86 && "$use_optimizations" == "yes" ]]]; then
   dnl Support for Intel x86 processors

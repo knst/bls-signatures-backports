@@ -39,6 +39,7 @@ fn main() {
         println!("Build for wasm32 is not fully supported");
         return;
     }
+    println!("cargo:warning=Building bls-signatures for non-Apple target: {}", target_arch);
 
     let root_path = Path::new("../..")
         .canonicalize()
@@ -100,8 +101,8 @@ fn main() {
         .collect();
 
     include_paths.extend([
-        bls_dash_build_path.join("_deps/relic-src/include"),
-        bls_dash_build_path.join("_deps/relic-build/include"),
+        bls_dash_build_path.join("depends/relic-src/include"),
+        bls_dash_build_path.join("depends/relic/include"),
         bls_dash_build_path.join("src"),
         root_path.join("include/dashbls"),
         bls_dash_build_path.join("depends/relic/include"),
@@ -196,6 +197,7 @@ fn main() {
 
         println!("cargo:rustc-link-lib=static=gmp");
     }
+    println!("cargo:warning=########## bls_dash_build_path:{}", bls_dash_build_path.display());
 
     // Generate rust code for c binding to src/lib.rs
     // println!("Generate C binding for rust:");
@@ -290,7 +292,7 @@ fn main() {
 
 
     let target = env::var("TARGET").unwrap();
-    println!("Building bls-signatures for apple target: {}", target);
+    println!("cargo:warning=Building bls-signatures for Apple target: {}", target);
     let root_path = Path::new("../..")
         .canonicalize()
         .expect("can't get abs path");
@@ -305,6 +307,32 @@ fn main() {
         fs::remove_dir_all(&bls_dash_build_path).expect("can't clean build directory");
     }
     fs::create_dir_all(&bls_dash_build_path).expect("can't create build directory");
+
+    let cc_path_output = Command::new("xcrun")
+        .arg("--sdk")
+        .arg("iphoneos")
+        .arg("--find")
+        .arg("clang")
+        .output()
+        .expect("Failed to find clang");
+    let cc_path = String::from_utf8_lossy(&cc_path_output.stdout).trim().to_string();
+
+    let cxx_path_output = Command::new("xcrun")
+        .arg("--sdk")
+        .arg("iphoneos")
+        .arg("--find")
+        .arg("clang++")
+        .output()
+        .expect("Failed to find clang++");
+    let cxx_path = String::from_utf8_lossy(&cxx_path_output.stdout).trim().to_string();
+
+    // Print the paths for clang and clang++
+    println!("cargo:warning=CC path: {}", cc_path);
+    println!("cargo:warning=CXX path: {}", cxx_path);
+
+    std::env::set_var("CC", cc_path);
+    std::env::set_var("CXX", cxx_path);
+
     let output = Command::new("sh")
         .current_dir(&root_path)
         .arg(script)
@@ -312,6 +340,7 @@ fn main() {
         .output()
         .expect("Failed to execute the shell script");
     handle_command_output(output);
+
     let (arch, platform) = match target.as_str() {
         "x86_64-apple-ios" => ("x86_64", "iphonesimulator"),
         "aarch64-apple-ios" => ("arm64", "iphoneos"),
@@ -335,8 +364,8 @@ fn main() {
         .collect();
 
     include_paths.extend([
-        bls_dash_build_path.join(format!("relic-{}-{}/_deps/relic-src/include", platform, arch)),
-        bls_dash_build_path.join(format!("relic-{}-{}/_deps/relic-build/include", platform, arch)),
+        bls_dash_build_path.join(format!("relic-{}-{}/depends/relic-src/include", platform, arch)),
+        bls_dash_build_path.join(format!("relic-{}-{}/depends/relic/include", platform, arch)),
         bls_dash_build_path.join("contrib/relic/src"),
         root_path.join("src"),
         root_path.join("include/dashbls"),
@@ -365,8 +394,10 @@ fn main() {
 
     println!("cargo:rustc-link-search={}", target_path.display());
     println!("cargo:rustc-link-lib=static=gmp");
-    // println!("cargo:rustc-link-lib=static=sodium");
-    // println!("cargo:rustc-link-lib=static=relic_s");
+    //println!("cargo:rustc-link-lib=c++");
+    //println!("cargo:rustc-link-lib=c");
+    //println!("cargo:rustc-link-lib=static=sodium");
+    println!("cargo:rustc-link-lib=static=relic_s");
     println!("cargo:rustc-link-lib=static=bls");
     println!("cargo:rustc-link-search={}", bls_dash_src_path.display());
     println!("cargo:rustc-link-lib=static=dashbls");

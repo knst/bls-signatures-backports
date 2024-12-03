@@ -827,19 +827,15 @@ AC_LANG_POP([C])
 AC_MSG_CHECKING([whether to build runtest])
 if test x$use_tests = xyes; then
   AC_MSG_RESULT([yes])
-  BUILD_TEST="yes"
 else
   AC_MSG_RESULT([no])
-  BUILD_TEST=""
 fi
 
 AC_MSG_CHECKING([whether to build runbench])
 if test x$use_bench = xyes; then
   AC_MSG_RESULT([yes])
-  BUILD_BENCH="yes"
 else
   AC_MSG_RESULT([no])
-  BUILD_BENCH=""
 fi
 
 AM_CONDITIONAL([TARGET_DARWIN], [test "$TARGET_OS" = "darwin"])
@@ -864,8 +860,8 @@ AM_CONDITIONAL(WITH_MPC, test 1 -eq 1)
 AM_CONDITIONAL(WITH_DV, test 1 -eq 1)
 AM_CONDITIONAL(WITH_FBX, test 1 -eq 1)
 
-AM_CONDITIONAL([USE_TESTS], [test x$BUILD_TEST = xyes])
-AM_CONDITIONAL([USE_BENCH], [test x$BUILD_BENCH = xyes])
+AM_CONDITIONAL([USE_TESTS], [test x"$use_tests" = x"yes"])
+AM_CONDITIONAL([USE_BENCH], [test x"$use_bench" = x"yes"])
 AM_CONDITIONAL([HARDEN], [test "$use_hardening" = "yes"])
 AM_CONDITIONAL([OPTIMIZE], [test "$use_optimizations" = "yes"])
 
@@ -902,8 +898,8 @@ echo
 echo "Options used to compile and link:"
 echo "  target os           = $TARGET_OS"
 echo "  backend             = $want_backend"
-echo "  build bench         = $BUILD_BENCH"
-echo "  build test          = $BUILD_TEST"
+echo "  build bench         = $use_tests"
+echo "  build test          = $use_bench"
 echo "  use debug           = $use_debug"
 echo "  use hardening       = $use_hardening"
 echo "  use optimizations   = $use_optimizations"

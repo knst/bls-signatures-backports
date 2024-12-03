@@ -498,6 +498,8 @@ fi
 case $host in
   *darwin*)
      AC_DEFINE([OPSYS], [MACOSX], [Detected operation system.])
+     TARGET_OS=darwin
+
      AC_PATH_PROG([BREW],brew,)
      if test x$BREW = x; then
        AC_PATH_PROG([PORT],port,)
@@ -510,8 +512,10 @@ case $host in
      fi
      ;;
   *mingw*)
-     use_pkgconfig=no
      AC_DEFINE([OPSYS], [WINDOWS], [Detected operation system.])
+     TARGET_OS=windows
+
+     use_pkgconfig=no
      LIBTOOL_APP_LDFLAGS="$LIBTOOL_APP_LDFLAGS -all-static"
 
      dnl libtool insists upon adding -nostdlib and a list of objects/libs to link against.
@@ -524,16 +528,21 @@ case $host in
      ;;
   *linux*)
     AC_DEFINE([OPSYS], [LINUX], [Detected operation system.])
+    TARGET_OS=linux
+
     RELIC_CPPFLAGS="-D_GNU_SOURCE"
     ;;
   *android*)
     AC_DEFINE([OPSYS], [DROID], [Detected operation system.])
+    TARGET_OS=android
     ;;
   *freebsd*)
     AC_DEFINE([OPSYS], [FREEBSD], [Detected operation system.])
+    TARGET_OS=freebsd
     ;;
   *netbsd*)
     AC_DEFINE([OPSYS], [NETBSD], [Detected operation system.])
+    TARGET_OS=netbsd
     ;;
   *)
     AC_DEFINE([OPSYS], [RELIC_NONE], [Detected operation system.])
@@ -771,7 +780,6 @@ CORE_CPPFLAGS="$CORE_CPPFLAGS -DHAVE_BUILD_INFO"
 
 case $host in
   *mingw*)
-     TARGET_OS=windows
      AC_CHECK_LIB([user32],   [main],                    [], [AC_MSG_ERROR([libuser32 missing])])
      AC_CHECK_LIB([shell32],  [SHGetSpecialFolderPathW], [], [AC_MSG_ERROR([libshell32 missing])])
      AC_CHECK_LIB([advapi32], [CryptAcquireContextW],    [], [AC_MSG_ERROR([libadvapi32 missing])])
@@ -799,14 +807,9 @@ case $host in
      AX_CHECK_LINK_FLAG([-Wl,--major-subsystem-version -Wl,6 -Wl,--minor-subsystem-version -Wl,1], [CORE_LDFLAGS="$CORE_LDFLAGS -Wl,--major-subsystem-version -Wl,6 -Wl,--minor-subsystem-version -Wl,1"], [], [])
      ;;
   *darwin*)
-     TARGET_OS=darwin
-
      AX_CHECK_LINK_FLAG([-Wl,-headerpad_max_install_names], [CORE_LDFLAGS="$CORE_LDFLAGS -Wl,-headerpad_max_install_names"], [], [])
      CORE_CPPFLAGS="$CORE_CPPFLAGS -DMAC_OSX -DOBJC_OLD_DISPATCH_PROTOTYPES=0"
      OBJCXXFLAGS="$CXXFLAGS"
-     ;;
-   *linux*)
-     TARGET_OS=linux
      ;;
 esac
 

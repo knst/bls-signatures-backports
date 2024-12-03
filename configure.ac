@@ -434,7 +434,7 @@ use_pkgconfig=yes
 
 if test x"$use_optimizations" = x"yes"; then
   case $host_cpu in
-    x86_64)
+    amd64 | x86_64)
       dnl Support for AMD64 (also known as x86_64 on some platforms) processors
       CPU_ARCH="x64"
       AC_DEFINE([ARCH], [X64], [Architecture.])

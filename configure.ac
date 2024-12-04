@@ -220,7 +220,11 @@ case $host in
         GMP_LDFLAGS="-L$gmp_prefix/lib"
       fi
     fi
-  ;;
+    ;;
+  *freebsd*)
+    GMP_CPPFLAGS="-I/usr/local/include"
+    GMP_LDFLAGS="-L/usr/local/lib"
+    ;;
 esac
 
 if test x"$want_backend" = x"auto"; then

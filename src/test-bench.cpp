@@ -116,40 +116,6 @@ void benchBatchVerification() {
     endStopwatch("Batch verification", start, numIters);
 }
 
-void benchFastAggregateVerification() {
-    const int numIters = 5000;
-
-    vector<G2Element> sigs;
-    vector<G1Element> pks;
-    vector<uint8_t> message = {1, 2, 3, 4, 5, 6, 7, 8};
-    vector<G2Element> pops;
-
-    for (int i = 0; i < numIters; i++) {
-        PrivateKey sk = PopSchemeMPL().KeyGen(getRandomSeed());
-        G1Element pk = sk.GetG1Element();
-        sigs.push_back(PopSchemeMPL().Sign(sk, message));
-        pops.push_back(PopSchemeMPL().PopProve(sk));
-        pks.push_back(pk);
-    }
-
-    auto start = startStopwatch();
-    G2Element aggSig = PopSchemeMPL().Aggregate(sigs);
-    endStopwatch("PopScheme Aggregation", start, numIters);
-
-
-    start = startStopwatch();
-    for (int i = 0; i < numIters; i++) {
-        bool ok = PopSchemeMPL().PopVerify(pks[i], pops[i]);
-        ASSERT(ok);
-    }
-    endStopwatch("PopScheme Proofs verification", start, numIters);
-
-    start = startStopwatch();
-    bool ok = PopSchemeMPL().FastAggregateVerify(pks, message, aggSig);
-    ASSERT(ok);
-    endStopwatch("PopScheme verification", start, numIters);
-}
-
 void benchSerialize() {
     const int numIters = 5000000;
     PrivateKey sk = BasicSchemeMPL().KeyGen(getRandomSeed());
@@ -206,7 +172,6 @@ int main(int argc, char* argv[]) {
     benchSigs();
     benchVerification();
     benchBatchVerification();
-    benchFastAggregateVerification();
     benchSerialize();
     benchSerializeToArray();
 }

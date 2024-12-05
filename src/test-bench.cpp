@@ -148,9 +148,63 @@ void benchFastAggregateVerification() {
     endStopwatch("PopScheme verification", start, numIters);
 }
 
+void benchSerialize() {
+    const int numIters = 5000000;
+    PrivateKey sk = BasicSchemeMPL().KeyGen(getRandomSeed());
+    G1Element pk = sk.GetG1Element();
+    vector<uint8_t> message = sk.GetG1Element().Serialize();
+    G2Element sig = BasicSchemeMPL().Sign(sk, message);
+
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        sk.Serialize();
+    }
+    endStopwatch("Serialize PrivateKey", start, numIters);
+
+    start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        pk.Serialize();
+    }
+    endStopwatch("Serialize G1Element", start, numIters);
+
+    start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        sig.Serialize();
+    }
+    endStopwatch("Serialize G2Element", start, numIters);
+}
+
+void benchSerializeToArray() {
+    const int numIters = 5000000;
+    PrivateKey sk = BasicSchemeMPL().KeyGen(getRandomSeed());
+    G1Element pk = sk.GetG1Element();
+    vector<uint8_t> message = sk.GetG1Element().Serialize();
+    G2Element sig = BasicSchemeMPL().Sign(sk, message);
+
+    auto start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        sk.SerializeToArray();
+    }
+    endStopwatch("SerializeToArray PrivateKey", start, numIters);
+
+    start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        pk.SerializeToArray();
+    }
+    endStopwatch("SerializeToArray G1Element", start, numIters);
+
+    start = startStopwatch();
+    for (int i = 0; i < numIters; i++) {
+        sig.SerializeToArray();
+    }
+    endStopwatch("SerializeToArray G2Element", start, numIters);
+}
+
 int main(int argc, char* argv[]) {
     benchSigs();
     benchVerification();
     benchBatchVerification();
     benchFastAggregateVerification();
+    benchSerialize();
+    benchSerializeToArray();
 }
